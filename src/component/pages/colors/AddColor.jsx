@@ -1,0 +1,188 @@
+import axios from 'axios'
+import React, { useEffect, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router'
+import { ChromePicker } from 'react-color'
+import iziToast from "izitoast";
+
+
+import { ToastContainer, toast } from 'react-toastify';
+
+export default function AddColor() {
+
+  let apiBaseUrl = import.meta.env.VITE_APIBASEURL
+  // console.log(apiBaseUrl);
+
+  let {id}=useParams()
+
+  // console.log(id);
+  
+
+  let [singledata,setSingleData] = useState([])
+  
+  let [color,handleChange] = useState("#000000")
+
+  let navigate=useNavigate()
+
+  let handleSubmit=(e)=>{
+    e.preventDefault()
+    let obj = {
+      name : e.target.name.value,
+      code : e.target.code.value,
+      order : e.target.order.value
+    }
+    // console.log(obj);
+
+    let url = id ? `color/update/${id}` : 'color/add'
+    let method = id ? 'put' : 'post'
+
+    axios[method](`${apiBaseUrl}${url}`,obj)
+    .then((res)=>res.data)
+    .then((finalRes)=>{
+      console.log(finalRes);
+
+      if(finalRes._status){
+        // iziToast.success({
+        //     title: 'OK',
+        //     message: 'Successfully inserted record!',
+        // });
+        toast.success(id ? 'Color updated successfully!' : 'Color added successfully!')
+        setTimeout(()=>{
+          navigate('/color/view')
+        },2000)
+      }
+      else{
+          // iziToast.error({
+          //   title: "error",
+          //   message:finalRes._message ,
+          //   position: "topRight",
+          // });
+          toast.error(finalRes._message)
+        }
+      // console.log(finalRes._message.error[0]);
+      
+      
+    })
+    
+  }
+  
+  
+  let updateData=()=>{
+
+    if(!id) return
+
+    // axios.get(`${apiBaseUrl}color/single-data/${id}`)
+    // .then((res)=>{
+    //     console.log(res.data._data);
+        
+    //     setSingleData(res.data._data)
+    // })   
+      axios.get(`${apiBaseUrl}color/single-data/${id}`)
+      .then((res) => {
+        // console.log(res.data._data)
+
+        setSingleData(res.data._data)
+
+        // agar existing color code hai to picker me set kar do
+        if (res.data._data.code) {
+          handleChange({ hex: res.data._data.code })
+        }
+      })
+      .catch((error) => {
+        // console.log(error)
+        toast.error("Failed to fetch color data")
+      })
+
+
+    
+  }
+
+  useEffect(()=>{
+    updateData()
+  },[id])
+
+
+  return (
+    <div>
+      <ToastContainer />
+      <div className='w-full min-h-[610px]'>
+        <p className='px-6 py-3 border-b-2 border-[#ccc] w-full font-semibold text-gray-700'>
+          <Link to="/dashboard" className='hover:text-blue-500'>Home</Link>  /
+          <Link to=" " className='hover:text-blue-500'> Color</Link> /
+          <span className='text-gray-600'>
+             {
+              id ? 'Update' : 'Add'
+             }
+          </span>
+        </p>
+
+        <div className='max-w-[1220px] mx-auto py-5  '>
+          <div className='w-full py-3 px-4 bg-slate-100 rounded-t-md border-1 border-slate-400'>
+            <h2 className='text-xl font-semibold'>
+               
+              {
+              id ? 'Update Color' : 'Add Color'
+              }
+
+            </h2>
+          </div>
+          <div className='w-full py-3 px-4 rounded-b-md border-1 border-slate-400 border-t-0'>
+
+            <form onSubmit={handleSubmit} action="">
+                <div className='mb-5'>
+                  <label htmlFor="" className='font-semibold mb-3'>Color Name</label>
+                  <input 
+                      name='name' 
+                      type="text" 
+                      defaultValue={singledata.name}
+                      placeholder='Enter Color Name' 
+                      className='w-full border-2 border-[#ccc] py-2 px-3 rounded-[8px]'/>
+                </div>
+
+                <div className='mb-5'>
+                  <h2 className='font-semibold mb-3'>Color Picker</h2>
+                  <div className='flex gap-[30px] items-center '>
+                      <ChromePicker 
+                          color={color}
+                          onChange={handleChange}
+                          
+                      />
+                      <div className='w-[50px] h-[50px] border' style={{background:color.hex}} >
+
+                      </div>
+                      
+                  </div>
+                   <input
+                       name='code' 
+                       type="text" 
+                       placeholder='Enter Color Name' 
+                       defaultValue={singledata.code}
+                       value={color.hex}
+                       className='w-full mt-5 border-2 border-[#ccc] py-2 px-3 rounded-[8px]' 
+                       />
+                </div>
+
+                <div className='mb-5'>
+                  <label htmlFor="" className='font-semibold mb-3'>Order</label>
+                  <input 
+                      name='order' 
+                      type="text" 
+                      placeholder='Enter Order' 
+                      defaultValue={singledata.order}
+                      className='w-full border-2 border-[#ccc] py-2 px-3 rounded-[8px]'/>
+                </div>
+
+                <button className='py-2 px-3 text-white bg-purple-600 rounded-[8px] my-5'>
+                  {
+                    id ? 'Update color' : 'Add color'
+                  }
+                </button>
+            </form>
+              
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  )
+}
